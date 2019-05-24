@@ -9,6 +9,8 @@ const fs =  require('fs')
 const jwt = require('koa-jwt')
 const cors = require('koa2-cors')
 const mongoConf = require('./config/mongo')
+const secret = require('./config/secret')
+const JWTToken = require('./middleware/JWTToken')
 
 //使用了遍历路由 取消单个引入
 // const index = require('./routes/index')
@@ -17,6 +19,24 @@ const mongoConf = require('./config/mongo')
 // error handler
 onerror(app)
 mongoConf.connect()
+
+//身份验证 
+app.use(JWTToken())
+
+//跨域处理
+app.use(cors());
+
+
+
+//路由的权限验证过滤
+app.use(jwt({secret: secret.sign}).unless({
+  path: [
+      /^\/$/, 
+      /\/users\/creatUser/,
+      { url: /\/papers/, methods: ['GET'] }
+  ]
+}));
+
 // middlewares
 app.use(bodyparser({
   enableTypes:['json', 'form', 'text']
@@ -48,14 +68,6 @@ app.use(async (ctx, next) => {
   }
 })
 
-
-//路由的权限验证过滤
-app.use(jwt({ secret: 'yourstr' }).unless({
-  path: [
-      /^\/$/, /\/token/, /\/wechat/,/\/users/,
-      { url: /\/papers/, methods: ['GET'] }
-  ]
-}));
 // routes
 // app.use(index.routes(), index.allowedMethods())
 // app.use(users.routes(), users.allowedMethods())
@@ -72,7 +84,6 @@ app.on('error', (err, ctx) => {
   console.error('server error', err, ctx)
 });
 
-//跨域处理
-app.use(cors());
+
 
 module.exports = app
