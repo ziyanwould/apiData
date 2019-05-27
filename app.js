@@ -33,6 +33,7 @@ app.use(jwt({secret: secret.sign}).unless({
   path: [
       /^\/$/, 
       /\/users\/creatUser/,
+      /\/users\/login/,
       { url: /\/papers/, methods: ['GET'] }
   ]
 }));

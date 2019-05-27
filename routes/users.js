@@ -6,8 +6,8 @@ const secret = require('../config/secret')
 router.prefix('/users')
 
 const tokenExpiresTime = 1000 * 60 * 60 * 24 * 1
-const jwtSecret = 'jwtSecret'
-router.post('/creatUser', function (ctx, next) {
+const jwtSecret = secret.sign
+router.post('/creatUser', async (ctx, next) =>{
     let data = ctx.request.body
     console.log(data)
     let schema = Joi.object().keys({
@@ -22,7 +22,7 @@ router.post('/creatUser', function (ctx, next) {
     }else{
         let reqdata = result.value;  //经过验证后的数据
         // ctx.body =  Users.create(reqdata)
-        next()
+        await next()
     }
    
 })
@@ -31,8 +31,12 @@ router.post('/login', async (ctx, next)=> {
     
     //ctx.body = await Users.find()
     const user = ctx.request.body
-  
-    if (user.username){
+    const mySql =  await Users.findOne({username:user.username})
+    if(mySql){
+        const password = mySql.password;
+    }
+
+    if (mySql && user.password == password){
         let payload = {
             exp:Date.now() + tokenExpiresTime,
             user:user.username
@@ -41,12 +45,15 @@ router.post('/login', async (ctx, next)=> {
 
         ctx.body = {
             user:user.username,
-            code:1,
+            code:200,
+            message:"登录成功",
             token
         }
+
     }else {
         ctx.body = {
-            code:-1
+            code:-1,
+            message:"用户名或者密码错误"
         }
     }
 })
@@ -85,7 +92,6 @@ router.post('/creatUser', async (ctx, next)=> {
         let mes = await Users.create(data)
         ctx.body = {
             user:data.username,
-            mes,
             code:200,
             token
         }
